@@ -1,91 +1,60 @@
 "use client";
-import { ChevronDownIcon, ChevronUpDownIcon, ChevronUpIcon, PencilSquareIcon, ScaleIcon, TagIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
-import Link from 'next/link';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { UserIcon } from '@heroicons/react/24/solid';
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Swal from 'sweetalert2';
 
-interface Category {
+interface Maintainer {
   id: string;
   name: string;
-  createdBy: string;
+  email: string;
+  phoneNumber: string;
+  city: string;
   active: boolean;
-  kilogram: string;
 }
 
-export default function CategoryList() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function MaintainerList() {
+  const [maintainers, setMaintainers] = useState<Maintainer[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<keyof Category>('name');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Fetch categories with server-side pagination
-  const fetchCategories = (pageNum = 1) => {
+  const fetchMaintainers = (pageNum = 1, searchTerm = "") => {
     setLoading(true);
-    console.log('Fetching categories for page:', pageNum);
-    fetch(`http://localhost:5119/api/Categories?page=${pageNum}`)
+    const url = new URL("http://localhost:5119/api/Maintainer");
+    url.searchParams.append("page", pageNum.toString());
+    if (searchTerm) url.searchParams.append("searchTerm", searchTerm);
+    fetch(url.toString())
       .then(async (res) => {
-        console.log('API Response status:', res.status);
-        if (!res.ok) throw new Error("Failed to fetch categories");
+        if (!res.ok) throw new Error("Failed to fetch maintainers");
         const totalPagesHeader = res.headers.get('X-Total-Pages');
         const currentPageHeader = res.headers.get('X-Current-Page');
-        const pageSizeHeader = res.headers.get('X-Page-Size'); 
+        const pageSizeHeader = res.headers.get('X-Page-Size');
         const totalCountHeader = res.headers.get('X-Total-Count');
         setTotalPages(totalPagesHeader ? parseInt(totalPagesHeader) : 1);
         setPage(currentPageHeader ? parseInt(currentPageHeader) : pageNum);
         setPageSize(pageSizeHeader ? parseInt(pageSizeHeader) : 5);
         setTotalCount(totalCountHeader ? parseInt(totalCountHeader) : 0);
-        console.log('Total pages from header:', totalPagesHeader);
         const data = await res.json();
-        console.log('Fetched categories:', data);
-        setCategories(data);
+        setMaintainers(data);
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Error fetching categories:', err);
         setError(err.message);
         setLoading(false);
       });
   };
 
   useEffect(() => {
-    fetchCategories(page);
+    fetchMaintainers(page, searchTerm);
     // eslint-disable-next-line
-  }, [page]);
+  }, [page, searchTerm]);
 
-  // Filter (client-side, after server-side pagination)
-  const filtered = categories.filter(cat =>
-    cat.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // Sort (client-side, after server-side pagination)
-  const sorted = [...filtered].sort((a, b) => {
-    let aVal = a[sortBy];
-    let bVal = b[sortBy];
-    if (typeof aVal === 'string' && typeof bVal === 'string') {
-      aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
-    }
-    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  const handleSort = (col: keyof Category) => {
-    if (sortBy === col) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(col);
-      setSortDir('asc');
-    }
-  };
-
-  // Delete handler
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -99,14 +68,14 @@ export default function CategoryList() {
 
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`http://localhost:5119/api/Categories/${id}`, {
+        const res = await fetch(`http://localhost:5119/api/Maintainer/${id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Failed to delete category");
-        Swal.fire("Deleted!", "The category has been deleted.", "success");
-        fetchCategories(page);
+        if (!res.ok) throw new Error("Failed to delete maintainer");
+        Swal.fire("Deleted!", "The maintainer has been deleted.", "success");
+        fetchMaintainers(page, searchTerm);
       } catch (err: any) {
-        Swal.fire("Error", err.message || "Failed to delete category", "error");
+        Swal.fire("Error", err.message || "Failed to delete maintainer", "error");
       }
     }
   };
@@ -116,20 +85,20 @@ export default function CategoryList() {
       <div className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div className="flex items-center gap-2">
-            <TagIcon className="h-6 w-6 text-blue-500" />
-            <span className="text-xl font-semibold text-blue-900">Category List</span>
+            <UserIcon className="h-6 w-6 text-blue-500" />
+            <span className="text-xl font-semibold text-blue-900">Maintainer List</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search..."
               className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black w-full sm:w-64"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              value={searchTerm}
+              onChange={e => { setSearchTerm(e.target.value); setPage(1); }}
             />
-            <Link href="/category/add">
+            <Link href="/maintainer/add">
               <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition w-full sm:w-auto">
-                + Add New Category
+                + Add New Maintainer
               </button>
             </Link>
           </div>
@@ -138,15 +107,9 @@ export default function CategoryList() {
           <table className="min-w-full text-base">
             <thead className="sticky top-0 z-10 bg-gray-100">
               <tr>
-                <th className="py-3 px-4 text-left font-semibold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('name')}>
-                  <div className="flex items-center gap-1">Name {sortBy === 'name' ? (sortDir === 'asc' ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />) : <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />}</div>
-                </th>
-                <th className="py-3 px-4 text-left font-semibold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('createdBy')}>
-                  <div className="flex items-center gap-1">Created By {sortBy === 'createdBy' ? (sortDir === 'asc' ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />) : <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />}</div>
-                </th>
-                <th className="py-3 px-4 text-left font-semibold text-gray-600 cursor-pointer select-none" onClick={() => handleSort('kilogram')}>
-                  <div className="flex items-center gap-1">Weight {sortBy === 'kilogram' ? (sortDir === 'asc' ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />) : <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />}</div>
-                </th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Maintainer Info</th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Location</th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Status</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
@@ -155,36 +118,46 @@ export default function CategoryList() {
                 <tr><td colSpan={4} className="py-6 text-center">Loading...</td></tr>
               ) : error ? (
                 <tr><td colSpan={4} className="py-6 text-center text-red-600">{error}</td></tr>
-              ) : sorted.length === 0 ? (
-                <tr><td colSpan={4} className="py-6 text-center text-gray-400">No categories found.</td></tr>
+              ) : maintainers.length === 0 ? (
+                <tr><td colSpan={4} className="py-6 text-center text-gray-400">No maintainers found.</td></tr>
               ) : (
-                sorted.map((cat) => (
-                  <tr key={cat.id} className="border-t hover:bg-blue-50 transition">
+                maintainers.map((maintainer) => (
+                  <tr key={maintainer.id} className="border-t hover:bg-blue-50 transition">
+                    {/* Maintainer Info */}
                     <td className="py-3 px-4 flex items-center gap-2 font-medium text-blue-900">
-                      <TagIcon className="h-5 w-5 text-blue-400" />
-                      {cat.name}
+                      <UserIcon className="h-5 w-5 text-blue-400" />
+                      <div>
+                        <div className="font-semibold text-blue-900 text-base">{maintainer.name}</div>
+                        <div className="flex items-center gap-1 text-gray-500 text-sm">
+                          <span className="material-icons text-base">mail</span>
+                          {maintainer.email}
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-500 text-sm">
+                          <span className="material-icons text-base">phone</span>
+                          {maintainer.phoneNumber}
+                        </div>
+                      </div>
                     </td>
+                    {/* Location */}
+                    <td className="py-3 px-4 text-black font-semibold">{maintainer.city}</td>
+                    {/* Status */}
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1 bg-cyan-200 text-cyan-800 px-2 py-1 rounded text-xs font-semibold">
-                        <UserIcon className="h-4 w-4" /> {cat.createdBy}
+                      <span className="text-black font-semibold">
+                        {maintainer.active ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1 bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-semibold">
-                        <ScaleIcon className="h-4 w-4" /> {cat.kilogram}
-                      </span>
-                    </td>
+                    {/* Actions */}
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
-                        <Link href={`/category/update/${cat.id}`}>
+                        <Link href={`/maintainer/edit/${maintainer.id}`}>
                           <button className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded" title="Edit">
-                            <PencilSquareIcon className="h-5 w-5" />
+                            <PencilIcon className="h-5 w-5" />
                           </button>
                         </Link>
                         <button
                           className="bg-red-500 hover:bg-red-600 text-white p-2 rounded"
                           title="Delete"
-                          onClick={() => handleDelete(cat.id)}
+                          onClick={() => handleDelete(maintainer.id)}
                         >
                           <TrashIcon className="h-5 w-5" />
                         </button>
@@ -197,7 +170,7 @@ export default function CategoryList() {
           </table>
         </div>
         {/* Pagination */}
-       
+        {totalPages > 1 && (
           <nav aria-label="Page navigation example" className="mt-6 flex justify-end">
             <ul className="pagination flex gap-1">
               <li className={`page-item ${page === 1 ? 'pointer-events-none opacity-50' : ''}`}>
@@ -232,6 +205,7 @@ export default function CategoryList() {
               </li>
             </ul>
           </nav>
+        )}
       </div>
     </div>
   );

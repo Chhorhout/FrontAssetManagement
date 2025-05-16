@@ -2,33 +2,47 @@
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import React, { useEffect, useState } from 'react';
+import Select, { StylesConfig } from 'react-select';
 
 export default function AddAsset() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
     serialNumber: "",
-    owner: "",
+    active: false,
     haveWarranty: false,
     warrantyStartDate: "",
     warrantyEndDate: "",
-    active: false
+    categoryId: "",
+    supplierId: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [categories, setCategories] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5119/api/categories")
+      .then(res => res.json())
+      .then(data => setCategories(data));
+    fetch("http://localhost:5119/api/supplier") 
+      .then(res => res.json())
+      .then(data => setSuppliers(data));
+  }, []);
 
   const validate = () => {
     const errors: {[key: string]: string} = {};
     if (!form.name.trim()) errors.name = "Asset name is required.";
     if (!form.serialNumber.trim()) errors.serialNumber = "Serial number is required.";
-    if (!form.owner.trim()) errors.owner = "Owner is required.";
+    if (!form.categoryId) errors.categoryId = "Category is required.";
     if (form.haveWarranty) {
       if (!form.warrantyStartDate) errors.warrantyStartDate = "Warranty start date required.";
       if (!form.warrantyEndDate) errors.warrantyEndDate = "Warranty end date required.";
     }
+    if (!form.supplierId) errors.supplierId = "Supplier is required.";
     return errors;
   };
 
@@ -36,11 +50,12 @@ export default function AddAsset() {
     setForm({
       name: "",
       serialNumber: "",
-      owner: "",
+      active: false,
       haveWarranty: false,
       warrantyStartDate: "",
       warrantyEndDate: "",
-      active: false
+      categoryId: "",
+      supplierId: ""
     });
     setError(null);
     setSuccess(false);
@@ -80,6 +95,49 @@ export default function AddAsset() {
     }
   };
 
+  // Prepare options for react-select
+  const categoryOptions = categories.map(cat => ({
+    value: cat.id,
+    label: cat.name
+  }));
+
+  const supplierOptions = suppliers.map(sup => ({
+    value: sup.id,
+    label: sup.name
+  }));
+
+  const customSelectStyles: StylesConfig = {
+    control: (provided, state) => ({
+      ...provided,
+      color: 'black',
+      minHeight: '44px',
+      borderColor: state.isFocused ? '#2563eb' : '#d1d5db', // blue-600 or gray-300
+      boxShadow: state.isFocused ? '0 0 0 2px #2563eb33' : provided.boxShadow,
+      '&:hover': { borderColor: '#2563eb' }
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: 'black',
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: 'black',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      color: 'black',
+      backgroundColor: state.isSelected
+        ? '#e5e7eb'
+        : state.isFocused
+        ? '#f3f4f6'
+        : 'white',
+    }),
+    menu: (provided) => ({
+      ...provided,
+      zIndex: 20, // ensures dropdown is above modals/dialogs
+    }),
+  };
+
   return (
     <div className="min-h-[80vh] flex justify-center items-start bg-[#f7f9fb] p-3 sm:p-8">
       <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg">
@@ -91,113 +149,152 @@ export default function AddAsset() {
           </Link>
         </div>
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-8" autoComplete="off">
-          <div className="overflow-x-auto">
-            <table className="w-full text-base">
-              <tbody>
-                <tr className="flex flex-col sm:table-row">
-                  <td className="py-3 px-3 font-semibold text-gray-600 w-full sm:w-1/4 min-w-[140px]">Asset Name</td>
-                  <td className="py-3 px-3 flex flex-col items-start gap-2 w-full">
-                    <input
-                      type="text"
-                      className={`w-full border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black text-base`}
-                      placeholder="Enter asset name"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      required
-                    />
-                    {fieldErrors.name && <span className="text-red-500 text-sm">{fieldErrors.name}</span>}
-                  </td>
-                </tr>
-                <tr className="flex flex-col sm:table-row">
-                  <td className="py-3 px-3 font-semibold text-gray-600">Serial Number</td>
-                  <td className="py-3 px-3 flex flex-col items-start gap-2 w-full">
-                    <input
-                      type="text"
-                      className={`w-full border ${fieldErrors.serialNumber ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black text-base`}
-                      placeholder="Enter serial number"
-                      name="serialNumber"
-                      value={form.serialNumber}
-                      onChange={handleChange}
-                      required
-                    />
-                    {fieldErrors.serialNumber && <span className="text-red-500 text-sm">{fieldErrors.serialNumber}</span>}
-                  </td>
-                </tr>
-                <tr className="flex flex-col sm:table-row">
-                  <td className="py-3 px-3 font-semibold text-gray-600">Owner</td>
-                  <td className="py-3 px-3 flex flex-col items-start gap-2 w-full">
-                    <input
-                      type="text"
-                      className={`w-full border ${fieldErrors.owner ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black text-base`}
-                      placeholder="Enter owner name"
-                      name="owner"
-                      value={form.owner}
-                      onChange={handleChange}
-                      required
-                    />
-                    {fieldErrors.owner && <span className="text-red-500 text-sm">{fieldErrors.owner}</span>}
-                  </td>
-                </tr>
-                <tr className="flex flex-col sm:table-row">
-                  <td className="py-3 px-3 font-semibold text-gray-600">Warranty</td>
-                  <td className="py-3 px-3 flex flex-col items-start gap-2 w-full">
-                    <div className="flex items-center gap-2 mb-2">
-                      <input
-                        type="checkbox"
-                        name="haveWarranty"
-                        id="haveWarranty"
-                        checked={form.haveWarranty}
-                        onChange={handleChange}
-                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="text-gray-700 text-base">Have Warranty</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2 w-full">
-                      <div className="flex-1">
-                        <input
-                          type="date"
-                          name="warrantyStartDate"
-                          className={`w-full border ${fieldErrors.warrantyStartDate ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black text-base`}
-                          placeholder="mm/dd/yyyy"
-                          value={form.warrantyStartDate}
-                          onChange={handleChange}
-                          disabled={!form.haveWarranty}
-                        />
-                        {fieldErrors.warrantyStartDate && <span className="text-red-500 text-sm">{fieldErrors.warrantyStartDate}</span>}
-                      </div>
-                      <div className="flex-1">
-                        <input
-                          type="date"
-                          name="warrantyEndDate"
-                          className={`w-full border ${fieldErrors.warrantyEndDate ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black text-base`}
-                          placeholder="mm/dd/yyyy"
-                          value={form.warrantyEndDate}
-                          onChange={handleChange}
-                          disabled={!form.haveWarranty}
-                        />
-                        {fieldErrors.warrantyEndDate && <span className="text-red-500 text-sm">{fieldErrors.warrantyEndDate}</span>}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="flex flex-col sm:table-row">
-                  <td className="py-3 px-3 font-semibold text-gray-600">Status</td>
-                  <td className="py-3 px-3 flex items-center gap-2 w-full">
-                    <input
-                      type="checkbox"
-                      name="active"
-                      checked={form.active}
-                      onChange={handleChange}
-                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="text-gray-700 text-base">Active Status</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <form onSubmit={handleSubmit} className="p-5 sm:p-8 space-y-6" autoComplete="off">
+          {/* Asset Name */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="sm:w-1/3 font-semibold text-gray-600">Asset Name</label>
+            <div className="flex-1">
+              <input
+                type="text"
+                className={`w-full border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black`}
+                placeholder="Enter asset name"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
+              {fieldErrors.name && <span className="text-red-500 text-sm">{fieldErrors.name}</span>}
+            </div>
           </div>
+
+          {/* Serial Number */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="sm:w-1/3 font-semibold text-gray-600">Serial Number</label>
+            <div className="flex-1">
+              <input
+                type="text"
+                className={`w-full border ${fieldErrors.serialNumber ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black`}
+                placeholder="Enter serial number"
+                name="serialNumber"
+                value={form.serialNumber}
+                onChange={handleChange}
+                required
+              />
+              {fieldErrors.serialNumber && <span className="text-red-500 text-sm">{fieldErrors.serialNumber}</span>}
+            </div>
+          </div>
+
+          {/* Warranty */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="sm:w-1/3 font-semibold text-gray-600">Warranty</label>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  name="haveWarranty"
+                  id="haveWarranty"
+                  checked={form.haveWarranty}
+                  onChange={handleChange}
+                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="text-gray-700 text-base">Have Warranty</span>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <input
+                  type="date"
+                  name="warrantyStartDate"
+                  className={`flex-1 border ${fieldErrors.warrantyStartDate ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black`}
+                  placeholder="mm/dd/yyyy"
+                  value={form.warrantyStartDate}
+                  onChange={handleChange}
+                  disabled={!form.haveWarranty}
+                />
+                <input
+                  type="date"
+                  name="warrantyEndDate"
+                  className={`flex-1 border ${fieldErrors.warrantyEndDate ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black`}
+                  placeholder="mm/dd/yyyy"
+                  value={form.warrantyEndDate}
+                  onChange={handleChange}
+                  disabled={!form.haveWarranty}
+                />
+              </div>
+              {fieldErrors.warrantyStartDate && <span className="text-red-500 text-sm">{fieldErrors.warrantyStartDate}</span>}
+              {fieldErrors.warrantyEndDate && <span className="text-red-500 text-sm">{fieldErrors.warrantyEndDate}</span>}
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="sm:w-1/3 font-semibold text-gray-600">Category</label>
+            <div className="flex-1">
+              <Select
+                className="w-full"
+                classNamePrefix="react-select"
+                options={categoryOptions}
+                value={categoryOptions.find(opt => opt.value === form.categoryId) || null}
+                onChange={option =>
+                  setForm(prev => ({
+                    ...prev,
+                    categoryId: option && 'value' in option ? option.value as string : ""
+                  }))
+                }
+                placeholder="Search or select category"
+                isClearable
+                styles={{
+                  ...customSelectStyles,
+                  menuPortal: base => ({ ...base, zIndex: 9999 })
+                }}
+                menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+                menuPosition="fixed"
+              />
+              {fieldErrors.categoryId && <span className="text-red-500 text-sm">{fieldErrors.categoryId}</span>}
+            </div>
+          </div>
+
+          {/* Supplier */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="sm:w-1/3 font-semibold text-gray-600">Supplier</label>
+            <div className="flex-1">
+              <Select
+                className="w-full"
+                classNamePrefix="react-select"
+                options={supplierOptions}
+                value={supplierOptions.find(opt => opt.value === form.supplierId) || null}
+                onChange={option =>
+                  setForm(prev => ({
+                    ...prev,
+                    supplierId: option && 'value' in option ? option.value as string : ""
+                  }))
+                }
+                placeholder="Search or select supplier"
+                isClearable
+                styles={{
+                  ...customSelectStyles,
+                  menuPortal: base => ({ ...base, zIndex: 9999 })
+                }}
+                menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
+                menuPosition="fixed"
+              />
+              {fieldErrors.supplierId && <span className="text-red-500 text-sm">{fieldErrors.supplierId}</span>}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <label className="sm:w-1/3 font-semibold text-gray-600">Status</label>
+            <div className="flex-1 flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="active"
+                checked={form.active}
+                onChange={handleChange}
+                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="text-gray-700 text-base">Active</span>
+            </div>
+          </div>
+
           {/* Error/Success */}
           {error && <div className="text-red-600 mt-3 text-base">{error}</div>}
           {success && (
@@ -206,22 +303,22 @@ export default function AddAsset() {
               Asset added successfully!
             </div>
           )}
+
           {/* Buttons */}
           <div className="flex justify-end gap-3 mt-8">
             <button
               type="button"
               onClick={handleReset}
-              className="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-7 py-2 rounded transition text-base"
+              className="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-7 py-2 rounded transition"
               disabled={loading}
             >
               Reset
             </button>
             <button
               type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-7 py-2 rounded transition text-base flex items-center gap-2"
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-7 py-2 rounded transition flex items-center gap-2"
               disabled={loading || Object.keys(fieldErrors).length > 0}
             >
-              {loading && <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>}
               {loading ? "Saving..." : "Save Asset"}
             </button>
           </div>

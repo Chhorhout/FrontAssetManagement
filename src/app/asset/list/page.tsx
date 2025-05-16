@@ -15,6 +15,8 @@ interface Asset {
   warrantyStartDate?: string;
   warrantyEndDate?: string;
   active?: boolean;
+  categoryName?: string;
+  supplierName?: string;
 }
 
 function formatShortDate(dateStr: string) {
@@ -138,6 +140,8 @@ export default function AssetList() {
               <tr>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Name</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Serial Number</th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Category</th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Supplier</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Owner</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Status</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Warranty</th>
@@ -159,6 +163,8 @@ export default function AssetList() {
                       {asset.name}
                     </td>
                     <td className="py-3 px-4 text-black">{asset.serialNumber}</td>
+                    <td className="py-3 px-4 text-black">{asset.categoryName}</td>
+                    <td className="py-3 px-4 text-black">{asset.supplierName}</td>
                     <td className="py-3 px-4">
                       <span className="inline-flex items-center gap-1 bg-cyan-200 text-cyan-800 px-2 py-1 rounded text-xs font-semibold">
                         <UserIcon className="h-4 w-4" /> {asset.owner}

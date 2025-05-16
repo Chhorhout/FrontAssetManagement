@@ -2,6 +2,7 @@
 import { CalendarIcon, PencilSquareIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Swal from 'sweetalert2';
 
 interface User {
   id: string;
@@ -64,8 +65,25 @@ export default function UserList() {
   }, [page, searchTerm, searchBy]);
 
   const handleDelete = async (id: string) => {
-    // Add confirmation and API call here
-    setUsers((prev) => prev.filter((u) => u.id !== id));
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    });
+
+    if (result.isConfirmed) {
+      try {
+        // Add your API call here
+        setUsers((prev) => prev.filter((u) => u.id !== id));
+        Swal.fire("Deleted!", "The user has been deleted.", "success");
+      } catch (err: any) {
+        Swal.fire("Error", err.message || "Failed to delete user", "error");
+      }
+    }
   };
 
   return (

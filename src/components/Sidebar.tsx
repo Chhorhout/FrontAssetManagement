@@ -1,12 +1,13 @@
 'use client';
 
 import {
-    ChevronDownIcon,
-    FolderIcon,
-    HomeIcon,
-    Squares2X2Icon,
-    UsersIcon,
-    WrenchScrewdriverIcon,
+  ChevronDownIcon,
+  FolderIcon,
+  HomeIcon,
+  ShoppingBagIcon,
+  Squares2X2Icon,
+  UsersIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -48,6 +49,14 @@ const sidebarSections = [
     submenu: [
       { name: 'Lists of maintainer', href: '/maintainer/list' },
       { name: 'Add new maintainer', href: '/maintainer/add' },
+    ],
+  },
+  {
+    name: 'Supplier',
+    icon: ShoppingBagIcon,
+    submenu: [
+      { name: 'Lists of supplier', href: '/supplier/list' },
+      { name: 'Add new supplier', href: '/supplier/add' },
     ],
   },
 ];
