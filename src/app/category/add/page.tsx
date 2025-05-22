@@ -1,5 +1,6 @@
 "use client";
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -21,7 +22,7 @@ export default function AddCategory() {
     else if (name.length < 2) errors.name = "Name must be at least 2 characters.";
     if (!createdBy.trim()) errors.createdBy = "Created By is required.";
     if (!kilogram.trim()) errors.kilogram = "Weight is required.";
-    else if (!/^\d+(kg)?$/.test(kilogram.trim())) errors.kilogram = "Enter a valid weight (e.g. 10kg or 10).";
+    else if (!/^\d+(\.\d+)?\s*(kg)?$/i.test(kilogram.trim())) errors.kilogram = "Enter a valid weight (e.g. 10kg, 4.5kg, 10, or 4.5).";
     return errors;
   };
 
@@ -61,7 +62,12 @@ export default function AddCategory() {
 
   return (
     <div className="min-h-[80vh] flex justify-center items-start bg-[#f7f9fb] p-3 sm:p-8">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-3xl bg-white rounded-xl shadow-lg"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-500 rounded-t-xl px-6 py-4">
           <h2 className="text-2xl font-semibold text-white mb-2 sm:mb-0">Add New Category</h2>
@@ -163,7 +169,7 @@ export default function AddCategory() {
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 } 

@@ -1,6 +1,7 @@
 "use client";
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { UserIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Swal from 'sweetalert2';
@@ -82,7 +83,12 @@ export default function MaintainerList() {
 
   return (
     <div className="p-2 sm:p-8 flex justify-center items-start min-h-[80vh] bg-[#f7f9fb]">
-      <div className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div className="flex items-center gap-2">
             <UserIcon className="h-6 w-6 text-blue-500" />
@@ -108,6 +114,8 @@ export default function MaintainerList() {
             <thead className="sticky top-0 z-10 bg-gray-100">
               <tr>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Maintainer Info</th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Email</th>
+                <th className="py-3 px-4 text-left font-semibold text-gray-600">Phone</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Location</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Status</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-600">Actions</th>
@@ -128,22 +136,33 @@ export default function MaintainerList() {
                       <UserIcon className="h-5 w-5 text-blue-400" />
                       <div>
                         <div className="font-semibold text-blue-900 text-base">{maintainer.name}</div>
-                        <div className="flex items-center gap-1 text-gray-500 text-sm">
-                          <span className="material-icons text-base">mail</span>
-                          {maintainer.email}
-                        </div>
-                        <div className="flex items-center gap-1 text-gray-500 text-sm">
-                          <span className="material-icons text-base">phone</span>
-                          {maintainer.phoneNumber}
-                        </div>
                       </div>
                     </td>
+                    {/* Email */}
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800">
+                        {maintainer.email}
+                      </span>
+                    </td>
+                    {/* Phone */}
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800">
+                        {maintainer.phoneNumber}
+                      </span>
+                    </td>
                     {/* Location */}
-                    <td className="py-3 px-4 text-black font-semibold">{maintainer.city}</td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800">
+                        {maintainer.city}
+                      </span>
+                    </td>
                     {/* Status */}
                     <td className="py-3 px-4">
-                      <span className="text-black font-semibold">
-                        {maintainer.active ? "Active" : "Inactive"}
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold
+                        ${maintainer.active === true ? "bg-green-100 text-green-800" :
+                          maintainer.active === false ? "bg-red-100 text-red-800" :
+                          "bg-gray-100 text-gray-800"}`}>
+                        {maintainer.active === true ? "Active" : maintainer.active === false ? "Inactive" : "Unknown"}
                       </span>
                     </td>
                     {/* Actions */}
@@ -206,7 +225,7 @@ export default function MaintainerList() {
             </ul>
           </nav>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 } 

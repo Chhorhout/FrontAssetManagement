@@ -1,8 +1,9 @@
 "use client";
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Select, { StylesConfig } from 'react-select';
 
 export default function AddAsset() {
@@ -15,7 +16,9 @@ export default function AddAsset() {
     warrantyStartDate: "",
     warrantyEndDate: "",
     categoryId: "",
-    supplierId: ""
+    supplierId: "",
+    location: "",
+    imageUrl: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,9 +26,14 @@ export default function AddAsset() {
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [categories, setCategories] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("http://localhost:5119/api/categories")
+    fetch("http://localhost:5119/api/categories ")
       .then(res => res.json())
       .then(data => setCategories(data));
     fetch("http://localhost:5119/api/supplier") 
@@ -43,6 +51,7 @@ export default function AddAsset() {
       if (!form.warrantyEndDate) errors.warrantyEndDate = "Warranty end date required.";
     }
     if (!form.supplierId) errors.supplierId = "Supplier is required.";
+    if (!form.location.trim()) errors.location = "Location is required.";
     return errors;
   };
 
@@ -55,11 +64,16 @@ export default function AddAsset() {
       warrantyStartDate: "",
       warrantyEndDate: "",
       categoryId: "",
-      supplierId: ""
+      supplierId: "",
+      location: "",
+      imageUrl: ""
     });
     setError(null);
     setSuccess(false);
     setFieldErrors({});
+    setImage(null);
+    setImagePreview(null);
+    setImageUrlInput("");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -71,6 +85,43 @@ export default function AddAsset() {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("http://localhost:5119/api/image", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Image upload failed");
+      const data = await res.json();
+      setImageUrlInput(data.fileUrl);
+      setImagePreview(data.fileUrl);
+    } catch (err) {
+      setError("Image upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setImage(file);
+      handleImageUpload(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setImage(file);
+      handleImageUpload(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -79,11 +130,20 @@ export default function AddAsset() {
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     setLoading(true);
+
+    // Transform warranty dates to null if haveWarranty is false
+    const payload = {
+      ...form,
+      warrantyStartDate: form.haveWarranty ? form.warrantyStartDate : null,
+      warrantyEndDate: form.haveWarranty ? form.warrantyEndDate : null,
+      imageUrl: imageUrlInput,
+    };
+
     try {
       const res = await fetch("http://localhost:5119/api/assets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error("Failed to add asset");
       setSuccess(true);
@@ -138,9 +198,26 @@ export default function AddAsset() {
     }),
   };
 
+  const formVariants = {
+    visible: {
+      transition: {
+        staggerChildren: 0.07
+      }
+    }
+  };
+  const fieldVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
     <div className="min-h-[80vh] flex justify-center items-start bg-[#f7f9fb] p-3 sm:p-8">
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-4xl bg-white rounded-xl shadow-lg"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-500 rounded-t-xl px-6 py-4">
           <h2 className="text-2xl font-semibold text-white mb-2 sm:mb-0">Add New Asset</h2>
@@ -149,9 +226,16 @@ export default function AddAsset() {
           </Link>
         </div>
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-8 space-y-6" autoComplete="off">
+        <motion.form
+          onSubmit={handleSubmit}
+          className="p-5 sm:p-8 space-y-6"
+          autoComplete="off"
+          initial="hidden"
+          animate="visible"
+          variants={formVariants}
+        >
           {/* Asset Name */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
             <label className="sm:w-1/3 font-semibold text-gray-600">Asset Name</label>
             <div className="flex-1">
               <input
@@ -165,10 +249,10 @@ export default function AddAsset() {
               />
               {fieldErrors.name && <span className="text-red-500 text-sm">{fieldErrors.name}</span>}
             </div>
-          </div>
+          </motion.div>
 
           {/* Serial Number */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
             <label className="sm:w-1/3 font-semibold text-gray-600">Serial Number</label>
             <div className="flex-1">
               <input
@@ -182,10 +266,10 @@ export default function AddAsset() {
               />
               {fieldErrors.serialNumber && <span className="text-red-500 text-sm">{fieldErrors.serialNumber}</span>}
             </div>
-          </div>
+          </motion.div>
 
           {/* Warranty */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
             <label className="sm:w-1/3 font-semibold text-gray-600">Warranty</label>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -222,10 +306,10 @@ export default function AddAsset() {
               {fieldErrors.warrantyStartDate && <span className="text-red-500 text-sm">{fieldErrors.warrantyStartDate}</span>}
               {fieldErrors.warrantyEndDate && <span className="text-red-500 text-sm">{fieldErrors.warrantyEndDate}</span>}
             </div>
-          </div>
+          </motion.div>
 
           {/* Category */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
             <label className="sm:w-1/3 font-semibold text-gray-600">Category</label>
             <div className="flex-1">
               <Select
@@ -241,19 +325,16 @@ export default function AddAsset() {
                 }
                 placeholder="Search or select category"
                 isClearable
-                styles={{
-                  ...customSelectStyles,
-                  menuPortal: base => ({ ...base, zIndex: 9999 })
-                }}
+                styles={customSelectStyles as StylesConfig<any, false>}
                 menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
                 menuPosition="fixed"
               />
               {fieldErrors.categoryId && <span className="text-red-500 text-sm">{fieldErrors.categoryId}</span>}
             </div>
-          </div>
+          </motion.div>
 
           {/* Supplier */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
             <label className="sm:w-1/3 font-semibold text-gray-600">Supplier</label>
             <div className="flex-1">
               <Select
@@ -269,19 +350,33 @@ export default function AddAsset() {
                 }
                 placeholder="Search or select supplier"
                 isClearable
-                styles={{
-                  ...customSelectStyles,
-                  menuPortal: base => ({ ...base, zIndex: 9999 })
-                }}
+                styles={customSelectStyles as StylesConfig<any, false>}
                 menuPortalTarget={typeof window !== "undefined" ? document.body : undefined}
                 menuPosition="fixed"
               />
               {fieldErrors.supplierId && <span className="text-red-500 text-sm">{fieldErrors.supplierId}</span>}
             </div>
-          </div>
+          </motion.div>
+
+          {/* Location */}
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
+            <label className="sm:w-1/3 font-semibold text-gray-600">Location</label>
+            <div className="flex-1">
+              <input
+                type="text"
+                className={`w-full border ${fieldErrors.location ? 'border-red-500' : 'border-gray-300'} rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black`}
+                placeholder="Enter location"
+                name="location"
+                value={form.location}
+                onChange={handleChange}
+                required
+              />
+              {fieldErrors.location && <span className="text-red-500 text-sm">{fieldErrors.location}</span>}
+            </div>
+          </motion.div>
 
           {/* Status */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
             <label className="sm:w-1/3 font-semibold text-gray-600">Status</label>
             <div className="flex-1 flex items-center gap-2">
               <input
@@ -293,15 +388,58 @@ export default function AddAsset() {
               />
               <span className="text-gray-700 text-base">Active</span>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Image Preview */}
+          <motion.div className="flex flex-col sm:flex-row sm:items-center gap-2" variants={fieldVariants}>
+            <label className="sm:w-1/3 font-semibold text-gray-600">Image</label>
+            <div className="flex-1">
+              <div
+                onDrop={handleDrop}
+                onDragOver={e => e.preventDefault()}
+                className="border-2 border-dashed border-gray-300 rounded p-4 text-center cursor-pointer mb-4"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <span className="text-gray-500">Uploading...</span>
+                ) : imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="mx-auto h-24 object-contain rounded" />
+                ) : (
+                  <span className="text-gray-500">Drag & drop an image here, or click to select</span>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
+              {fieldErrors.imageUrl && <span className="text-red-500 text-sm">{fieldErrors.imageUrl}</span>}
+            </div>
+          </motion.div>
 
           {/* Error/Success */}
-          {error && <div className="text-red-600 mt-3 text-base">{error}</div>}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="text-red-600 mt-3 text-base"
+            >
+              {error}
+            </motion.div>
+          )}
           {success && (
-            <div className="text-green-600 mt-3 text-base flex items-center gap-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="text-green-600 mt-3 text-base flex items-center gap-2"
+            >
               <CheckCircleIcon className="h-6 w-6 text-green-500" />
               Asset added successfully!
-            </div>
+            </motion.div>
           )}
 
           {/* Buttons */}
@@ -322,8 +460,8 @@ export default function AddAsset() {
               {loading ? "Saving..." : "Save Asset"}
             </button>
           </div>
-        </form>
-      </div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 } 

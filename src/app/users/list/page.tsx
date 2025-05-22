@@ -1,5 +1,6 @@
 "use client";
 import { CalendarIcon, PencilSquareIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Swal from 'sweetalert2';
@@ -77,8 +78,13 @@ export default function UserList() {
 
     if (result.isConfirmed) {
       try {
-        // Add your API call here
-        setUsers((prev) => prev.filter((u) => u.id !== id));
+        // Call the API to delete the user
+        const res = await fetch(`http://localhost:5119/api/users/${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete user");
+        // Refresh the user list from backend
+        fetchUsers(page, searchTerm, searchBy);
         Swal.fire("Deleted!", "The user has been deleted.", "success");
       } catch (err: any) {
         Swal.fire("Error", err.message || "Failed to delete user", "error");
@@ -88,7 +94,12 @@ export default function UserList() {
 
   return (
     <div className="p-2 sm:p-8 flex justify-center items-start min-h-[80vh] bg-[#f7f9fb]">
-      <div className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div className="flex items-center gap-2">
             <UserIcon className="h-6 w-6 text-blue-500" />
@@ -160,13 +171,16 @@ export default function UserList() {
                     </td>
                     {/* Status */}
                     <td className="py-3 px-4">
-                      <span className="text-black font-semibold">
-                        {user.active ? "Active" : "Inactive"}
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold
+                        ${user.active === true ? "bg-green-100 text-green-800" :
+                          user.active === false ? "bg-red-100 text-red-800" :
+                          "bg-gray-100 text-gray-800"}`}>
+                        {user.active === true ? "Active" : user.active === false ? "Inactive" : "Unknown"}
                       </span>
                     </td>
                     {/* Created */}
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1 bg-gray-300 text-gray-800 px-2 py-1 rounded text-xs font-semibold">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800`}>
                         <CalendarIcon className="h-4 w-4" />
                         {formatShortDate(user.createdAt || "")}
                       </span>
@@ -231,7 +245,7 @@ export default function UserList() {
             </ul>
           </nav>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 } 

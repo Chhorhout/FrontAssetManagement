@@ -2,11 +2,12 @@
 import { EnvelopeIcon, PhoneIcon, UserIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export default function AddSupplier() {
+export default function EditSupplier() {
   const router = useRouter();
+  const { id } = useParams();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,6 +17,27 @@ export default function AddSupplier() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`http://localhost:5119/api/Supplier/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setForm({
+          name: data.name || "",
+          email: data.email || "",
+          phoneNumber: data.phoneNumber || "",
+          active: !!data.active
+        });
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to load supplier");
+        setLoading(false);
+      });
+  }, [id]);
 
   const validate = () => {
     const errors: {[key: string]: string} = {};
@@ -36,10 +58,22 @@ export default function AddSupplier() {
   };
 
   const handleReset = () => {
-    setForm({ name: "", email: "", phoneNumber: "", active: false });
+    if (!id) return;
+    setLoading(true);
     setError(null);
     setSuccess(false);
     setFieldErrors({});
+    fetch(`http://localhost:5119/api/Supplier/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setForm({
+          name: data.name || "",
+          email: data.email || "",
+          phoneNumber: data.phoneNumber || "",
+          active: !!data.active
+        });
+        setLoading(false);
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,19 +84,20 @@ export default function AddSupplier() {
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     try {
-      const res = await fetch("http://localhost:5119/api/Supplier", {
-        method: "POST",
+      const res = await fetch(`http://localhost:5119/api/Supplier/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
       });
-      if (!res.ok) throw new Error("Failed to add supplier");
+      if (!res.ok) throw new Error("Failed to update supplier");
       setSuccess(true);
-      handleReset();
       setTimeout(() => router.push("/supplier/list"), 1200);
     } catch (err: any) {
-      setError(err.message || "Failed to add supplier");
+      setError(err.message || "Failed to update supplier");
     }
   };
+
+  if (loading) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="min-h-[80vh] flex justify-center items-start bg-[#f7f9fb] p-3 sm:p-8">
@@ -74,7 +109,7 @@ export default function AddSupplier() {
       >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#5a6ee5] rounded-t-xl px-6 py-4">
-          <h2 className="text-2xl font-semibold text-white mb-2 sm:mb-0">Create Supplier</h2>
+          <h2 className="text-2xl font-semibold text-white mb-2 sm:mb-0">Update Supplier</h2>
           <Link href="/supplier/list">
             <button className="bg-white text-[#5a6ee5] font-semibold px-6 py-2 rounded shadow hover:bg-blue-50 transition text-base">Back to List</button>
           </Link>
@@ -144,7 +179,7 @@ export default function AddSupplier() {
           </div>
           {/* Error/Success */}
           {error && <div className="text-red-600 mt-3 text-base">{error}</div>}
-          {success && <div className="text-green-600 mt-3 text-base">Supplier added successfully!</div>}
+          {success && <div className="text-green-600 mt-3 text-base">Supplier updated successfully!</div>}
           {/* Buttons */}
           <div className="flex justify-end gap-3 mt-8">
             <button
@@ -158,7 +193,7 @@ export default function AddSupplier() {
               type="submit"
               className="bg-green-500 hover:bg-green-600 text-white font-semibold px-7 py-2 rounded transition text-base"
             >
-              Save Supplier
+              Update Supplier
             </button>
           </div>
         </form>

@@ -1,5 +1,6 @@
 "use client";
 import { CheckCircleIcon, EnvelopeIcon, PhoneIcon, UserIcon, WrenchScrewdriverIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -67,7 +68,12 @@ export default function AddMaintainer() {
 
   return (
     <div className="min-h-[80vh] flex justify-center items-start bg-[#f7f9fb] p-3 sm:p-8">
-      <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-6xl bg-white rounded-xl shadow-lg"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#5a6ee5] rounded-t-xl px-6 py-4">
           <h2 className="text-2xl font-semibold text-white mb-2 sm:mb-0">Create Maintainer</h2>
@@ -77,6 +83,11 @@ export default function AddMaintainer() {
         </div>
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-8" autoComplete="off">
+          {success && (
+            <div className="flex items-center text-green-600 mb-4 text-base bg-green-100 border border-green-300 rounded px-4 py-2">
+              <CheckCircleIcon className="h-5 w-5 mr-2" /> Maintainer added successfully!
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-base">
               <tbody>
@@ -158,11 +169,6 @@ export default function AddMaintainer() {
               <XCircleIcon className="h-5 w-5 mr-2" /> {error}
             </div>
           )}
-          {success && (
-            <div className="flex items-center text-green-600 mt-3 text-base">
-              <CheckCircleIcon className="h-5 w-5 mr-2" /> Maintainer added successfully!
-            </div>
-          )}
           {/* Buttons */}
           <div className="flex justify-end gap-3 mt-8">
             <button
@@ -180,7 +186,7 @@ export default function AddMaintainer() {
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 } 

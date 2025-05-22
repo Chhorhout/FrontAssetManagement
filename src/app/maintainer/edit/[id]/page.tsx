@@ -1,5 +1,6 @@
 "use client";
 import { EnvelopeIcon, PhoneIcon, UserIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -89,7 +90,12 @@ export default function UpdateMaintainer() {
 
   return (
     <div className="min-h-[80vh] flex justify-center items-start bg-[#f7f9fb] p-3 sm:p-8">
-      <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-6xl bg-white rounded-xl shadow-lg"
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-[#5a6ee5] rounded-t-xl px-6 py-4">
           <h2 className="text-2xl font-semibold text-white mb-2 sm:mb-0">Update Maintainer</h2>
@@ -194,7 +200,7 @@ export default function UpdateMaintainer() {
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 } 

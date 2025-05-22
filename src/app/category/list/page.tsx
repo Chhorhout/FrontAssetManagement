@@ -1,5 +1,6 @@
 "use client";
 import { ChevronDownIcon, ChevronUpDownIcon, ChevronUpIcon, PencilSquareIcon, ScaleIcon, TagIcon, TrashIcon, UserIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import Swal from 'sweetalert2';
@@ -10,6 +11,7 @@ interface Category {
   createdBy: string;
   active: boolean;
   kilogram: string;
+  status?: string;
 }
 
 export default function CategoryList() {
@@ -60,7 +62,9 @@ export default function CategoryList() {
 
   // Filter (client-side, after server-side pagination)
   const filtered = categories.filter(cat =>
-    cat.name.toLowerCase().includes(search.toLowerCase())
+    cat.name.toLowerCase().includes(search.toLowerCase()) ||
+    cat.createdBy.toLowerCase().includes(search.toLowerCase()) ||
+    cat.kilogram.toLowerCase().includes(search.toLowerCase())
   );
 
   // Sort (client-side, after server-side pagination)
@@ -71,8 +75,8 @@ export default function CategoryList() {
       aVal = aVal.toLowerCase();
       bVal = bVal.toLowerCase();
     }
-    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+    if (aVal && bVal && aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+    if (aVal && bVal && aVal > bVal) return sortDir === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -113,7 +117,12 @@ export default function CategoryList() {
 
   return (
     <div className="p-2 sm:p-8 flex justify-center items-start min-h-[80vh] bg-[#f7f9fb]">
-      <div className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="w-full max-w-7xl bg-white rounded-xl shadow-lg p-4 sm:p-6"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div className="flex items-center gap-2">
             <TagIcon className="h-6 w-6 text-blue-500" />
@@ -122,7 +131,7 @@ export default function CategoryList() {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search"
               className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black w-full sm:w-64"
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -170,7 +179,7 @@ export default function CategoryList() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1 bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800">
                         <ScaleIcon className="h-4 w-4" /> {cat.kilogram}
                       </span>
                     </td>
@@ -232,7 +241,7 @@ export default function CategoryList() {
               </li>
             </ul>
           </nav>
-      </div>
+      </motion.div>
     </div>
   );
 } 
